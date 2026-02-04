@@ -1,0 +1,55 @@
+name: Build DecimalBattery APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_SDK_ROOT: ${{ runner.temp }}/android-sdk
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 11
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '11'
+
+    - name: Install basic tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget unzip zip
+
+    - name: Install Android commandline tools
+      run: |
+        mkdir -p $ANDROID_SDK_ROOT
+        wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O /tmp/cmdline.zip
+        unzip -q /tmp/cmdline.zip -d $ANDROID_SDK_ROOT/cmdline-tools-temp
+        mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/latest
+        mv $ANDROID_SDK_ROOT/cmdline-tools-temp/cmdline-tools/* $ANDROID_SDK_ROOT/cmdline-tools/latest/
+        yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-30" "build-tools;30.0.3"
+
+    - name: Install Gradle (system)
+      run: sudo apt-get install -y gradle
+
+    - name: Build APK (assembleRelease)
+      working-directory: ./app
+      run: |
+        chmod +x gradlew || true
+        if [ -x "./gradlew" ]; then
+          ./gradlew assembleRelease --no-daemon
+        else
+          gradle assembleRelease
+        fi
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: DecimalBattery-apk
+        path: app/build/outputs/apk/release/*.apk
