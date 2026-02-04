@@ -1,0 +1,6 @@
+id=fastchargepercent
+name=FastChargePercent
+version=1.0
+author=assistant
+description=Show integer or decimal battery percent based on fast charging (LSPosed module)
+minSdk=21
